@@ -5,8 +5,8 @@ import copy
 COMP = 1
 HUMAN = -1
 
-def children_states(state):
-    turn = HUMAN if sum(state) == 0 else COMP
+def children_states(state, player):
+    turn = player
     children = []
     for i in range(9):
         if state[i] == 0:
@@ -16,27 +16,18 @@ def children_states(state):
 
 Three_aligned = {(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)}
 
-def eval_win(state):
+def eval_win(state, player):
     for (i,j,k) in Three_aligned:
         if state[i] != 0 and state[i] == state[j] and state[j] == state[k]:
             return state[i]
     for i in range(9):
         if state[i] == 0:
-            return children_states(state)
+            return children_states(state, player)
     return 0
 
 Start = tuple(0 for i in range(9))
 Tree = {}
 Scores = {}
-
-def fill_tree(current_state):
-    children = eval_win(current_state)
-    if type(children) == list:
-        for child_state in children:
-            if child_state not in Tree:
-                fill_tree(child_state)
-    Tree[current_state] = children
-
 
 def score(state):
     if wins(state, COMP):
@@ -76,12 +67,13 @@ def human_turn():
 
 def choose_move():
     global Start,Scores
-    children = eval_win(Start)
+    children = eval_win(Start, COMP)
     best = -infinity
     best_index = None
     for c in children:
-        if Scores[c] > best:
-            best = Scores.get(c)
+        result = symmetryInTree(c)
+        if Scores[result] > best:
+            best = Scores.get(result)
             best_index = c
     Start = best_index;
 
@@ -92,19 +84,50 @@ def ai_turn():
     print_board()
     choose_move()
 
+def horizontalMirror(state):
+    return (state[6],state[7],state[8],state[3],state[4],state[5],state[0],state[1],state[2])
 
-def minimax(current_state):
+def verticalMirror(state):
+    return (state[2],state[1],state[0],state[5],state[4],state[3],state[8],state[7],state[6])
+
+def turn90(state):    
+    return (state[6],state[3],state[0],state[7],state[4],state[1],state[8],state[5],state[2])
+
+
+def symmetryInTree(state):
+    if state in Tree:
+        return state
+    if horizontalMirror(state) in Tree:
+        return horizontalMirror(state)
+    if verticalMirror(state) in Tree:
+        return verticalMirror(state)
+    state = turn90(state)
+    if state in Tree:
+        return state
+    state = turn90(state)
+    if state in Tree:
+        return state
+    state = turn90(state)
+    if state in Tree:
+        return state
+    return False
+
+
+def minimax(current_state, player):
     global Scores
-    children = eval_win(current_state)
+    children = eval_win(current_state, player)
     if type(children) == int:
         score = children
     else:
-        turn = HUMAN if sum(current_state) == 0 else COMP
+        turn = player
         score = -turn
         for child_state in children:
-            if child_state not in Tree:
-                minimax(child_state)
-            score = max(score,Scores[child_state]) if turn == COMP else min(score,Scores[child_state])
+            result = symmetryInTree(child_state)
+            if type(result) == bool:
+                minimax(child_state, -player)
+                score = max(score,Scores[child_state]) if turn == COMP else min(score,Scores[child_state])
+            else :
+                score = max(score,Scores[result]) if turn == COMP else min(score,Scores[result])
     Tree[current_state] = children
     Scores[current_state] = score
 
@@ -136,20 +159,32 @@ def print_board():
 def main():
 
     #fill_tree(Start)
+    firstPlayer=2
+    firstPlayer = int(input('Press 0 to go first, 1 to go second : '))
+    while (firstPlayer!= 0 and firstPlayer!=1):
+        print("Please press 0 or 1")
+        firstPlayer = int(input('Press 0 to go first, 1 to go second : '))
+
     print("********************")
-    minimax(Start)
+    if firstPlayer==0:
+        minimax(Start, HUMAN)
+    if firstPlayer==1:
+        minimax(Start,COMP)
     print(len(Tree))
     print(len(Scores))
 
-    while (type(eval_win(Start)) != int):
-    
+    if (firstPlayer == 1):
+        ai_turn()
+    while (type(eval_win(Start, COMP)) != int):
         human_turn()
-        if(type(eval_win(Start)) == int):
+        if(type(eval_win(Start, HUMAN)) == int):
             break
         #todo lecture arbre faire un choix
         ai_turn()
+
+    print("\n Final board :")
     print_board();
-    score = eval_win(Start)
+    score = eval_win(Start, COMP)
     if score == 1:
         print("AI win")
     elif score == -1:
