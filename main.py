@@ -29,19 +29,6 @@ Start = tuple(0 for i in range(9))
 Tree = {}
 Scores = {}
 
-def score(state):
-    if wins(state, COMP):
-        score = +1
-        #print("Computer win")
-    elif wins(state, HUMAN):
-        score = -1
-        #print("Human win")
-    else:
-        score = 0
-        #print("NULL")
-
-    return score
-
 def human_turn():
     global Start
     move = -1
@@ -132,13 +119,6 @@ def minimax(current_state, player):
     Scores[current_state] = score
 
 
-def valid_move(x, y):
-    if [x, y] in empty_cells(board):
-        return True
-    else:
-        return False
-
-
 def print_board():
     global Start
     print("*************")
@@ -157,8 +137,6 @@ def print_board():
 
 
 def main():
-
-    #fill_tree(Start)
     firstPlayer=2
     firstPlayer = int(input('Press 0 to go first, 1 to go second : '))
     while (firstPlayer!= 0 and firstPlayer!=1):
@@ -179,7 +157,6 @@ def main():
         human_turn()
         if(type(eval_win(Start, HUMAN)) == int):
             break
-        #todo lecture arbre faire un choix
         ai_turn()
 
     print("\n Final board :")
