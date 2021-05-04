@@ -29,15 +29,6 @@ Start = tuple(0 for i in range(9))
 Tree = {}
 Scores = {}
 
-def fill_tree(current_state):
-    children = eval_win(current_state)
-    if type(children) == list:
-        for child_state in children:
-            if child_state not in Tree:
-                fill_tree(child_state)
-    Tree[current_state] = children
-
-
 def score(state):
     if wins(state, COMP):
         score = +1
@@ -80,8 +71,9 @@ def choose_move():
     best = -infinity
     best_index = None
     for c in children:
-        if Scores[c] > best:
-            best = Scores.get(c)
+        result = symmetryInTree(c)
+        if Scores[result] > best:
+            best = Scores.get(result)
             best_index = c
     Start = best_index;
 
@@ -91,6 +83,34 @@ def ai_turn():
     print(f'AI turn ["X"]')
     print_board()
     choose_move()
+
+def horizontalMirror(state):
+    return (state[6],state[7],state[8],state[3],state[4],state[5],state[0],state[1],state[2])
+
+def verticalMirror(state):
+    return (state[2],state[1],state[0],state[5],state[4],state[3],state[8],state[7],state[6])
+
+def turn90(state):    
+    return (state[6],state[3],state[0],state[7],state[4],state[1],state[8],state[5],state[2])
+
+
+def symmetryInTree(state):
+    if state in Tree:
+        return state
+    if horizontalMirror(state) in Tree:
+        return horizontalMirror(state)
+    if verticalMirror(state) in Tree:
+        return verticalMirror(state)
+    state = turn90(state)
+    if state in Tree:
+        return state
+    state = turn90(state)
+    if state in Tree:
+        return state
+    state = turn90(state)
+    if state in Tree:
+        return state
+    return False
 
 
 def minimax(current_state):
@@ -102,9 +122,12 @@ def minimax(current_state):
         turn = HUMAN if sum(current_state) == 0 else COMP
         score = -turn
         for child_state in children:
-            if child_state not in Tree:
+            result = symmetryInTree(child_state)
+            if type(result) == bool:
                 minimax(child_state)
-            score = max(score,Scores[child_state]) if turn == COMP else min(score,Scores[child_state])
+                score = max(score,Scores[child_state]) if turn == COMP else min(score,Scores[child_state])
+            else :
+                score = max(score,Scores[result]) if turn == COMP else min(score,Scores[result])
     Tree[current_state] = children
     Scores[current_state] = score
 
